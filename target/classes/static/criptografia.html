@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<!-- TELA 1: LOGIN (endereço: /criptografia.html) -->
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Login</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            background: #4b4d50;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 16px;
+            color: #0a1f44;
+            /* sem font-family: labels e textos usam a fonte serifada padrão, como no print */
+        }
+
+        .caixa {
+            background: #fff;
+            width: 400px;
+            max-width: 100%;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, .25);
+        }
+
+        .logo {
+            display: block;
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 16px;
+            border: 2px solid #0a1f44;
+            object-fit: cover;
+        }
+
+        h1 {
+            margin: 0 0 14px;
+            text-align: center;
+            font-size: 28px;
+            color: #0a1f44;
+        }
+
+        .subtitulo {
+            margin: 0 0 32px;
+            text-align: center;
+            font-size: 14px;
+            color: #4b5b7a;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 15px;
+            font-weight: bold;
+            color: #0a1f44;
+        }
+
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            height: 42px;
+            padding: 0 12px;
+            margin-bottom: 20px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-family: Arial, sans-serif;
+            font-size: 15px;
+            color: #111827;
+        }
+
+        input::placeholder { color: #6b7280; }
+
+        input[type="email"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #2f5de8;
+            box-shadow: 0 0 0 3px rgba(47, 93, 232, .2);
+        }
+
+        .opcoes {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 4px 0 24px;
+            font-size: 12px;
+        }
+
+        .opcoes label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0;
+            font-size: 12px;
+            font-weight: normal;
+            color: #4b5b7a;
+            cursor: pointer;
+        }
+
+        .opcoes input { margin: 0 0 0 4px; }
+
+        a {
+            color: #2f5de8;
+            text-decoration: none;
+        }
+
+        a:hover { text-decoration: underline; }
+
+        button {
+            width: 100%;
+            height: 43px;
+            background: #2f5de8;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        button:hover { background: #2450cf; }
+
+        #mensagem {
+            min-height: 20px;
+            margin: 14px 0 0;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .criar-conta {
+            margin: 18px 0 0;
+            text-align: center;
+            font-size: 13px;
+            color: #4b5b7a;
+        }
+
+        .criar-conta a { font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="caixa">
+        <!-- Coloque a sua logo na mesma pasta com o nome logo.png -->
+        <img class="logo" src="logo.png" alt="Logo da empresa">
+
+        <h1>Login</h1>
+        <p class="subtitulo">Entre na sua conta para continuar</p>
+
+        <form id="formLogin">
+            <label for="email">E-mail</label>
+            <input type="email" id="email" placeholder="Digite seu e-mail" required>
+
+            <label for="senha">Senha</label>
+            <input type="password" id="senha" placeholder="Digite sua senha" required>
+
+            <div class="opcoes">
+                <label><input type="checkbox" id="lembrar"> Lembrar de mim</label>
+                <a href="#">Esqueci minha senha</a>
+            </div>
+
+            <button type="submit">Entrar</button>
+        </form>
+
+        <p id="mensagem"></p>
+
+        <p class="criar-conta">Ainda não possui uma conta? <a href="#">Criar conta</a></p>
+    </div>
+
+    <script>
+        document.getElementById("formLogin").addEventListener("submit", async (e) => {
+            e.preventDefault(); // impede a página de recarregar
+
+            // Envia email e senha NORMAIS: quem compara com o hash é o Java
+            const dados = new URLSearchParams({
+                email: document.getElementById("email").value,
+                senha: document.getElementById("senha").value
+            });
+
+            const resposta = await fetch("/login", { method: "POST", body: dados });
+            const texto = await resposta.text();
+            const msg = document.getElementById("mensagem");
+
+            if (resposta.ok) {
+                // LOGIN CERTO: abre a tela 2
+                window.location.href = "/home.html";
+            } else {
+                // LOGIN ERRADO: mostra a mensagem em vermelho
+                msg.textContent = texto;
+                msg.style.color = "red";
+            }
+        });
+    </script>
+</body>
+</html>

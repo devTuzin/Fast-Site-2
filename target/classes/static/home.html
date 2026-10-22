@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<!-- TELA 2: ABRE QUANDO O LOGIN ESTÁ CERTO (endereço: /home.html) -->
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Página inicial</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        html { min-height: 100%; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Segoe UI", "Open Sans", Arial, sans-serif;
+            font-size: 14px;
+            color: #000;
+            background: linear-gradient(90deg, #a9a9a9 0%, #d2d2d2 40%, #ffffff 100%) fixed;
+        }
+
+        /* A página fica escondida até o Java confirmar que há login */
+        body.oculto { display: none; }
+
+        header {
+            height: 48px;
+            padding: 0 12px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(90deg, #0d0d0d 0%, #8a8a8a 50%, #ffffff 100%);
+        }
+
+        .botao-topo {
+            height: 31px;
+            padding: 0 18px;
+            border: none;
+            border-radius: 16px;
+            background: #9b9b9b;
+            color: #000;
+            font-family: inherit;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .botao-topo:hover { background: #8a8a8a; }
+
+        #btnSair { width: 88px; padding: 0; }
+
+        main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 28px;
+            padding: 48px 16px;
+        }
+
+        .cartao {
+            width: 380px;
+            max-width: 100%;
+            height: 152px;
+            border-radius: 28px;
+            background: #b3b3b3;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 32px;
+            text-align: center;
+        }
+
+        .cartao p { margin: 0; }
+
+        /* Lista de cadastros */
+        .lista {
+            width: 960px;
+            max-width: 100%;
+            padding: 24px;
+            border-radius: 28px;
+            background: #b3b3b3;
+        }
+
+        .lista h2 {
+            margin: 0 0 16px;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .tabela-rolagem { overflow-x: auto; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(0, 0, 0, .18);
+            vertical-align: top;
+        }
+
+        th { font-weight: 600; white-space: nowrap; }
+
+        tbody tr:last-child td { border-bottom: none; }
+
+        td.obs { min-width: 180px; }
+
+        #estadoLista {
+            margin: 0;
+            padding: 8px 0;
+            text-align: center;
+        }
+
+        /* Janela de cadastro */
+        dialog {
+            width: 440px;
+            max-width: calc(100% - 32px);
+            max-height: calc(100vh - 32px);
+            padding: 32px;
+            border: none;
+            border-radius: 24px;
+            background: #fff;
+            color: #111;
+            overflow: auto;
+        }
+
+        dialog::backdrop { background: rgba(0, 0, 0, .55); }
+
+        dialog h2 {
+            margin: 0 0 6px;
+            font-size: 20px;
+            text-align: center;
+        }
+
+        .sub {
+            margin: 0 0 22px;
+            text-align: center;
+            color: #555;
+        }
+
+        dialog label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        dialog input, dialog textarea {
+            width: 100%;
+            padding: 0 12px;
+            margin-bottom: 16px;
+            border: 1px solid #c4c4c4;
+            border-radius: 8px;
+            font-family: Arial, sans-serif;
+            font-size: 15px;
+            color: #111;
+        }
+
+        dialog input { height: 40px; }
+
+        dialog textarea {
+            height: 80px;
+            padding: 10px 12px;
+            resize: vertical;
+        }
+
+        dialog input:focus, dialog textarea:focus {
+            outline: none;
+            border-color: #555;
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, .12);
+        }
+
+        .linha {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .acoes {
+            display: flex;
+            gap: 10px;
+            margin-top: 4px;
+        }
+
+        .acoes button {
+            flex: 1;
+            height: 40px;
+            border: none;
+            border-radius: 20px;
+            font-family: inherit;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        #btnCadastrar { background: #333; color: #fff; }
+        #btnCadastrar:hover { background: #111; }
+        #btnCadastrar:disabled { background: #888; cursor: not-allowed; }
+
+        #btnFechar { background: #d4d4d4; color: #000; }
+        #btnFechar:hover { background: #c2c2c2; }
+
+        #mensagem {
+            min-height: 20px;
+            margin: 14px 0 0;
+            text-align: center;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="oculto">
+    <header>
+        <button class="botao-topo" id="btnNovoCadastro">Novo cadastro</button>
+        <button class="botao-topo" id="btnSair">Sair</button>
+    </header>
+
+    <main>
+        <div class="cartao">
+            <p>Login Realizado!</p>
+            <p>Bem Vindo: <span id="emailLogado"></span></p>
+        </div>
+
+        <section class="lista">
+            <h2 id="tituloLista">Cadastros realizados</h2>
+            <p id="estadoLista">Carregando cadastros...</p>
+            <div class="tabela-rolagem" id="areaTabela" hidden>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Endereço</th>
+                            <th>CEP</th>
+                            <th>Número</th>
+                            <th>Telefone</th>
+                            <th>Observação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpoTabela"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Janela de cadastro -->
+    <dialog id="janelaCadastro">
+        <h2>Novo cadastro</h2>
+        <p class="sub">Preencha todos os campos</p>
+
+        <form id="formCadastro">
+            <label for="nome">Nome</label>
+            <input type="text" id="nome" placeholder="Digite o nome" required>
+
+            <label for="endereco">Endereço</label>
+            <input type="text" id="endereco" placeholder="Digite o endereço" required>
+
+            <div class="linha">
+                <div>
+                    <label for="cep">CEP</label>
+                    <input type="text" id="cep" placeholder="00000-000" inputmode="numeric"
+                           maxlength="9" pattern="\d{5}-\d{3}" title="Digite o CEP no formato 00000-000" required>
+                </div>
+                <div>
+                    <label for="numero">Número</label>
+                    <input type="text" id="numero" placeholder="Ex.: 123" required>
+                </div>
+            </div>
+
+            <label for="telefone">Telefone</label>
+            <input type="tel" id="telefone" placeholder="(00) 00000-0000" inputmode="numeric"
+                   maxlength="15" pattern="\(\d{2}\) \d{4,5}-\d{4}"
+                   title="Digite o telefone com DDD, ex.: (11) 91234-5678" required>
+
+            <label for="observacao">Observação</label>
+            <textarea id="observacao" placeholder="Digite a observação" required></textarea>
+
+            <div class="acoes">
+                <button type="button" id="btnFechar">Fechar</button>
+                <button type="submit" id="btnCadastrar">Cadastrar</button>
+            </div>
+        </form>
+
+        <p id="mensagem" role="status" aria-live="polite"></p>
+    </dialog>
+
+    <script>
+        const janela = document.getElementById("janelaCadastro");
+        const form = document.getElementById("formCadastro");
+        const msg = document.getElementById("mensagem");
+        const botao = document.getElementById("btnCadastrar");
+
+        // ---------- Lista de cadastros (GET /cadastros) ----------
+        async function carregarCadastros() {
+            const estado = document.getElementById("estadoLista");
+            const area = document.getElementById("areaTabela");
+            const corpo = document.getElementById("corpoTabela");
+
+            try {
+                const resposta = await fetch("/cadastrados");
+                if (!resposta.ok) throw new Error("Status " + resposta.status);
+
+                const cadastros = await resposta.json();
+                corpo.innerHTML = "";
+
+                if (!Array.isArray(cadastros) || cadastros.length === 0) {
+                    estado.textContent = "Nenhum cadastro realizado ainda.";
+                    estado.hidden = false;
+                    area.hidden = true;
+                    return;
+                }
+
+                document.getElementById("tituloLista").textContent =
+                    "Cadastros realizados (" + cadastros.length + ")";
+
+                for (const c of cadastros) {
+                    const linha = document.createElement("tr");
+                    const campos = [c.nome, c.endereco, c.cep, c.numero, c.telefone, c.observacao];
+
+                    campos.forEach((valor, i) => {
+                        const celula = document.createElement("td");
+                        celula.textContent = valor ?? "";
+                        if (i === 5) celula.className = "obs";
+                        linha.appendChild(celula);
+                    });
+
+                    corpo.appendChild(linha);
+                }
+
+                estado.hidden = true;
+                area.hidden = false;
+            } catch (erro) {
+                console.error("Erro ao carregar cadastros:", erro);
+                estado.textContent = "Não foi possível carregar os cadastros.";
+                estado.hidden = false;
+                area.hidden = true;
+            }
+        }
+
+        // ---------- Janela de cadastro ----------
+        document.getElementById("btnNovoCadastro").addEventListener("click", () => {
+            msg.textContent = "";
+            janela.showModal();
+            document.getElementById("nome").focus();
+        });
+
+        document.getElementById("btnFechar").addEventListener("click", () => janela.close());
+
+        // Máscara do CEP: 00000-000
+        document.getElementById("cep").addEventListener("input", (e) => {
+            let v = e.target.value.replace(/\D/g, "").slice(0, 8);
+            if (v.length > 5) v = v.slice(0, 5) + "-" + v.slice(5);
+            e.target.value = v;
+        });
+
+        // Máscara do telefone: (00) 00000-0000 ou (00) 0000-0000
+        document.getElementById("telefone").addEventListener("input", (e) => {
+            let v = e.target.value.replace(/\D/g, "").slice(0, 11);
+            if (v.length > 10) {
+                v = `(${v.slice(0, 2)}) ${v.slice(2, 7)}-${v.slice(7)}`;
+            } else if (v.length > 6) {
+                v = `(${v.slice(0, 2)}) ${v.slice(2, 6)}-${v.slice(6)}`;
+            } else if (v.length > 2) {
+                v = `(${v.slice(0, 2)}) ${v.slice(2)}`;
+            } else if (v.length > 0) {
+                v = `(${v}`;
+            }
+            e.target.value = v;
+        });
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            msg.textContent = "";
+            botao.disabled = true;
+            botao.textContent = "Cadastrando...";
+
+            // Envia os dados para o Java (POST /cadastro)
+            const dados = new URLSearchParams({
+                nome: document.getElementById("nome").value.trim(),
+                endereco: document.getElementById("endereco").value.trim(),
+                cep: document.getElementById("cep").value,
+                numero: document.getElementById("numero").value.trim(),
+                telefone: document.getElementById("telefone").value,
+                observacao: document.getElementById("observacao").value.trim()
+            });
+
+            try {
+                const resposta = await fetch("/cadastro", { method: "POST", body: dados });
+                const texto = await resposta.text();
+
+                if (resposta.ok) {
+                    // CADASTRO CERTO: avisa, limpa o formulário e atualiza a lista
+                    msg.textContent = "Cadastro realizado com sucesso!";
+                    msg.style.color = "#15803d";
+                    form.reset();
+                    carregarCadastros();
+                } else {
+                    msg.textContent = texto.trim() || ("Erro " + resposta.status + " ao cadastrar.");
+                    msg.style.color = "red";
+                }
+            } catch (erro) {
+                msg.textContent = "Erro de conexão com o servidor. Tente novamente.";
+                msg.style.color = "red";
+            } finally {
+                botao.disabled = false;
+                botao.textContent = "Cadastrar";
+            }
+        });
+
+        // ---------- Login / Sair ----------
+        // Ao abrir a página, pergunta ao Java quem está logado
+        async function verificarLogin() {
+            const resposta = await fetch("/usuario");
+
+            if (!resposta.ok) {
+                // Ninguém logado: volta para a tela de login
+                window.location.href = "criptografia.html";
+                return;
+            }
+
+            // Logado: mostra o email, exibe a página e carrega os cadastros
+            document.getElementById("emailLogado").textContent = await resposta.text();
+            document.body.classList.remove("oculto");
+            carregarCadastros();
+        }
+
+        // Botão Sair: apaga a sessão e volta para o login
+        document.getElementById("btnSair").addEventListener("click", async () => {
+            await fetch("/logout", { method: "POST" });
+            window.location.href = "criptografia.html";
+        });
+
+        verificarLogin();
+    </script>
+</body>
+</html>
