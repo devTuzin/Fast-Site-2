@@ -125,3 +125,7 @@ demo/
 | "Não foi possível conectar ao servidor." | O servidor Java não está rodando. Execute o passo 5. |
 | Login ou cadastro dá erro e o console mostra `SQLException` | O MySQL não está ligado, o banco `login_page` não foi criado ou o usuário e a senha do `UsuarioDAO.java` estão errados. |
 | "Não foi possível carregar os cadastros." | Confira se a tabela `cadastrados` existe e se a tela busca a rota `/cadastrados`. |
+
+
+|Email para Acesso: arthurdojava@gmail.com
+|Senha para Acesso: oJavaDomina
