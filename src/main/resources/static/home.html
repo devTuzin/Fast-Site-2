@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<!-- TELA 2: ABRE QUANDO O LOGIN ESTÁ CERTO (endereço: /home.html) -->
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Página inicial</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f0f2f5; margin: 0; }
+        header { background: #2563eb; color: #fff; padding: 16px 24px;
+                 display: flex; justify-content: space-between; align-items: center; }
+        header button { background: #fff; color: #2563eb; border: none; padding: 8px 16px;
+                        border-radius: 4px; cursor: pointer; font-size: 14px; }
+        main { padding: 32px 24px; }
+        .cartao { background: #fff; padding: 24px; border-radius: 8px;
+                  box-shadow: 0 2px 10px rgba(0,0,0,.1); max-width: 600px; }
+        /* A página fica escondida até o Java confirmar que há login */
+        body.oculto { display: none; }
+    </style>
+</head>
+<body class="oculto">
+    <header>
+        <strong>Meu Sistema</strong>
+        <button id="btnSair">Sair</button>
+    </header>
+
+    <main>
+        <div class="cartao">
+            <h2>Bem-vindo!</h2>
+            <p>Você está logado como <strong id="emailLogado"></strong>.</p>
+            <!-- Coloque aqui o conteúdo da sua tela principal -->
+        </div>
+    </main>
+
+    <script>
+        // Ao abrir a página, pergunta ao Java quem está logado
+        async function verificarLogin() {
+            const resposta = await fetch("/usuario");
+
+            if (!resposta.ok) {
+                // Ninguém logado: volta para a tela de login
+                window.location.href = "/criptografia.html";
+                return;
+            }
+
+            // Logado: mostra o email e exibe a página
+            document.getElementById("emailLogado").textContent = await resposta.text();
+            document.body.classList.remove("oculto");
+        }
+
+        // Botão Sair: apaga a sessão e volta para o login
+        document.getElementById("btnSair").addEventListener("click", async () => {
+            await fetch("/logout", { method: "POST" });
+            window.location.href = "/criptografia.html";
+        });
+
+        verificarLogin();
+    </script>
+</body>
+</html>
