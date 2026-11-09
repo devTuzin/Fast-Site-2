@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<!-- CRIAR CONTA (endereço: /cadastro.html) -->
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Criar conta</title>
+    <link rel="stylesheet" href="/css/app.css">
+</head>
+<body class="centro">
+    <div class="caixa">
+        <img class="logo" src="/imgs/purple-purplecore.webp" alt="Logo">
+        <h1>Criar conta</h1>
+        <p class="subtitulo">Informe e-mail e senha para acessar o sistema</p>
+
+        <form id="formConta" novalidate>
+            <label for="email">E-mail</label>
+            <input type="email" id="email" name="email" placeholder="Digite seu e-mail" required autocomplete="username">
+
+            <label for="senha">Senha</label>
+            <input type="password" id="senha" name="senha" placeholder="Mínimo de 6 caracteres" minlength="6" required autocomplete="new-password">
+
+            <label for="confirmar">Confirmar senha</label>
+            <input type="password" id="confirmar" placeholder="Repita a senha" required autocomplete="new-password">
+
+            <button type="submit" class="btn" id="btnCriar">Criar conta</button>
+        </form>
+
+        <p class="rodape">Já possui uma conta? <a href="/index.html">Entrar</a></p>
+    </div>
+
+    <script src="/js/app.js"></script>
+    <script>
+        const form = document.getElementById("formConta");
+        const botao = document.getElementById("btnCriar");
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const email = document.getElementById("email").value.trim();
+            const senha = document.getElementById("senha").value;
+
+            if (!email || !email.includes("@")) { toast("Informe um e-mail válido.", "aviso"); return; }
+            if (senha.length < 6) { toast("A senha deve ter pelo menos 6 caracteres.", "aviso"); return; }
+            if (senha !== document.getElementById("confirmar").value) { toast("As senhas não conferem.", "aviso"); return; }
+
+            botao.disabled = true;
+            botao.textContent = "Criando...";
+            try {
+                await api("/api/auth/registro", { method: "POST", semRedirecionar: true, body: { email, senha } });
+                toast("Conta criada com sucesso! Redirecionando para o login...", "sucesso");
+                setTimeout(() => { location.href = "/index.html"; }, 1500);
+            } catch (erro) {
+                toast(erro.message, "erro");
+                botao.disabled = false;
+                botao.textContent = "Criar conta";
+            }
+        });
+    </script>
+</body>
+</html>

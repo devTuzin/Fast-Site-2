@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<!-- INÍCIO / PAINEL (endereço: /home.html) -->
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Início</title>
+    <link rel="stylesheet" href="/css/app.css">
+</head>
+<body class="oculto">
+    <main>
+        <section class="painel">
+            <h2>Bem-vindo!</h2>
+            <p class="sub">Você está logado como <strong id="emailLogado"></strong>.</p>
+            <p style="margin:0">Use o menu acima para gerenciar clientes e produtos.</p>
+        </section>
+
+        <section class="grade">
+            <div class="cartao">
+                <div class="rotulo">Clientes cadastrados</div>
+                <div class="valor" id="totalClientes">–</div>
+                <div class="pequeno"><a href="/clientes.html">Gerenciar clientes →</a></div>
+            </div>
+            <div class="cartao">
+                <div class="rotulo">Produtos cadastrados</div>
+                <div class="valor" id="totalProdutos">–</div>
+                <div class="pequeno"><a href="/produtos.html">Gerenciar produtos →</a></div>
+            </div>
+            <div class="cartao">
+                <div class="rotulo">Valor total em estoque</div>
+                <div class="valor" id="valorEstoque">–</div>
+            </div>
+        </section>
+
+        <section class="painel">
+            <h2>Cotação do dia</h2>
+            <p class="sub">Dados da API pública AwesomeAPI (atualizados a cada minuto)</p>
+            <div class="grade" id="cotacoes" style="width:100%">
+                <p class="estado">Carregando cotações...</p>
+            </div>
+        </section>
+    </main>
+
+    <script src="/js/app.js"></script>
+    <script>
+        (async () => {
+            const email = await iniciarPagina("home");
+            if (!email) return;
+            document.getElementById("emailLogado").textContent = email;
+
+            // Números do painel
+            try {
+                const r = await api("/api/resumo");
+                document.getElementById("totalClientes").textContent = r.clientes;
+                document.getElementById("totalProdutos").textContent = r.produtos;
+                document.getElementById("valorEstoque").textContent = moeda.format(r.valorEstoque);
+            } catch (e) {
+                toast(e.message, "erro");
+            }
+
+            // API pública: cotação (o servidor Java consulta a AwesomeAPI)
+            const area = document.getElementById("cotacoes");
+            try {
+                const lista = await api("/api/cotacao");
+                area.innerHTML = lista.map((c) => {
+                    const sobe = c.variacao >= 0;
+                    return `<div class="cartao">
+                        <div class="rotulo">${esc(c.nome)} (${esc(c.codigo)})</div>
+                        <div class="valor">${moeda.format(c.valor)}</div>
+                        <div class="pequeno ${sobe ? "sobe" : "desce"}">${sobe ? "▲" : "▼"} ${c.variacao.toFixed(2).replace(".", ",")}% hoje</div>
+                    </div>`;
+                }).join("");
+            } catch (e) {
+                area.innerHTML = `<p class="estado">Cotação indisponível no momento.</p>`;
+            }
+        })();
+    </script>
+</body>
+</html>

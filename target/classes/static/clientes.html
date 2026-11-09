@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<!-- TELA 1: CRUD DE CLIENTES (endereço: /clientes.html) -->
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Clientes</title>
+    <link rel="stylesheet" href="/css/app.css">
+</head>
+<body class="oculto">
+    <main>
+        <section class="painel">
+            <div class="cabecalho-painel">
+                <div>
+                    <h2 id="titulo">Clientes</h2>
+                    <p class="sub" style="margin:0">Cadastre, edite e exclua clientes. O endereço é preenchido pelo CEP (API ViaCEP).</p>
+                </div>
+                <button type="button" class="btn" id="btnNovo">+ Novo cliente</button>
+            </div>
+
+            <div class="busca" style="margin-bottom:16px">
+                <input type="search" id="campoBusca" placeholder="Consultar por nome..." autocomplete="off">
+            </div>
+
+            <p class="estado" id="estado">Carregando clientes...</p>
+            <div class="tabela-rolagem" id="areaTabela" hidden>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Endereço</th>
+                            <th>Cidade/UF</th>
+                            <th>CEP</th>
+                            <th>Telefone</th>
+                            <th>Observação</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpo"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <dialog id="janela">
+        <h2 id="tituloJanela">Novo cliente</h2>
+        <p class="sub">Preencha os dados do cliente</p>
+
+        <form id="form" novalidate>
+            <label for="nome">Nome</label>
+            <input type="text" id="nome" name="nome" placeholder="Digite o nome" maxlength="120" required>
+
+            <label for="cep">CEP</label>
+            <div class="com-botao">
+                <input type="text" id="cep" name="cep" placeholder="00000-000" inputmode="numeric" maxlength="9" required>
+                <button type="button" class="btn claro mini" id="btnCep" style="height:40px">Buscar CEP</button>
+            </div>
+
+            <label for="endereco">Endereço</label>
+            <input type="text" id="endereco" name="endereco" placeholder="Rua, avenida..." maxlength="150" required>
+
+            <div class="linha">
+                <div>
+                    <label for="numero">Número</label>
+                    <input type="text" id="numero" name="numero" placeholder="Ex.: 123" maxlength="20" required>
+                </div>
+                <div>
+                    <label for="bairro">Bairro</label>
+                    <input type="text" id="bairro" name="bairro" maxlength="100">
+                </div>
+            </div>
+
+            <div class="linha-3">
+                <div>
+                    <label for="cidade">Cidade</label>
+                    <input type="text" id="cidade" name="cidade" maxlength="100">
+                </div>
+                <div>
+                    <label for="uf">UF</label>
+                    <input type="text" id="uf" name="uf" maxlength="2" style="text-transform:uppercase">
+                </div>
+            </div>
+
+            <label for="telefone">Telefone</label>
+            <input type="tel" id="telefone" name="telefone" placeholder="(00) 00000-0000" inputmode="numeric" maxlength="15" required>
+
+            <label for="observacao">Observação</label>
+            <textarea id="observacao" name="observacao" placeholder="Opcional" maxlength="500"></textarea>
+
+            <div class="rodape-janela">
+                <button type="button" class="btn claro" id="btnFechar">Cancelar</button>
+                <button type="submit" class="btn" id="btnSalvar">Salvar</button>
+            </div>
+        </form>
+    </dialog>
+
+    <script src="/js/app.js"></script>
+    <script>
+        const janela = document.getElementById("janela");
+        const form = document.getElementById("form");
+        const corpo = document.getElementById("corpo");
+        const estado = document.getElementById("estado");
+        const area = document.getElementById("areaTabela");
+        const busca = document.getElementById("campoBusca");
+        const botaoSalvar = document.getElementById("btnSalvar");
+        let clientes = [];
+        let editandoId = null;
+        let ultimoCepConsultado = "";
+
+        mascaraCep(form.elements.cep);
+        mascaraTelefone(form.elements.telefone);
+
+        /* ---------- LISTAR (GET) ---------- */
+        async function carregar() {
+            try {
+                clientes = await api("/api/clientes?busca=" + encodeURIComponent(busca.value.trim()));
+                desenhar();
+            } catch (e) {
+                estado.textContent = "Não foi possível carregar os clientes.";
+                estado.hidden = false;
+                area.hidden = true;
+                toast(e.message, "erro");
+            }
+        }
+
+        function desenhar() {
+            corpo.innerHTML = "";
+            if (clientes.length === 0) {
+                estado.textContent = busca.value.trim()
+                    ? 'Nenhum cliente encontrado para "' + busca.value.trim() + '".'
+                    : "Nenhum cliente cadastrado ainda. Clique em \"Novo cliente\".";
+                estado.hidden = false;
+                area.hidden = true;
+                return;
+            }
+            for (const c of clientes) {
+                const linha = document.createElement("tr");
+                const local = [c.cidade, c.uf].filter(Boolean).join("/");
+                linha.innerHTML = `
+                    <td>${esc(c.nome)}</td>
+                    <td>${esc(c.endereco)}, ${esc(c.numero)}${c.bairro ? " - " + esc(c.bairro) : ""}</td>
+                    <td>${esc(local)}</td>
+                    <td>${esc(c.cep)}</td>
+                    <td>${esc(c.telefone)}</td>
+                    <td>${esc(c.observacao)}</td>
+                    <td class="acoes">
+                        <button type="button" class="btn mini" data-acao="editar" data-id="${c.id}">Editar</button>
+                        <button type="button" class="btn mini perigo" data-acao="excluir" data-id="${c.id}">Excluir</button>
+                    </td>`;
+                corpo.appendChild(linha);
+            }
+            estado.hidden = true;
+            area.hidden = false;
+        }
+
+        let temporizador;
+        busca.addEventListener("input", () => { clearTimeout(temporizador); temporizador = setTimeout(carregar, 250); });
+
+        /* ---------- Janela de cadastro / edição ---------- */
+        function abrirJanela(cliente) {
+            editandoId = cliente ? cliente.id : null;
+            form.reset();
+            limparErrosCampos(form);
+            ultimoCepConsultado = cliente ? cliente.cep : "";
+            document.getElementById("tituloJanela").textContent = cliente ? "Editar cliente" : "Novo cliente";
+            if (cliente) {
+                for (const campo of ["nome", "cep", "endereco", "numero", "bairro", "cidade", "uf", "telefone", "observacao"]) {
+                    form.elements[campo].value = cliente[campo] ?? "";
+                }
+            }
+            janela.showModal();
+            form.elements.nome.focus();
+        }
+
+        document.getElementById("btnNovo").addEventListener("click", () => abrirJanela(null));
+        document.getElementById("btnFechar").addEventListener("click", () => janela.close());
+
+        /* ---------- API PÚBLICA: ViaCEP (via servidor) ---------- */
+        async function buscarCep() {
+            const cep = form.elements.cep.value;
+            if (cep.length !== 9) { toast("Digite o CEP completo (8 números).", "aviso"); return; }
+            ultimoCepConsultado = cep;
+            const botao = document.getElementById("btnCep");
+            botao.disabled = true;
+            botao.textContent = "Buscando...";
+            try {
+                const e = await api("/api/cep/" + cep.replace("-", ""));
+                if (form.elements.cep.value !== cep) return; // usuário já mudou o CEP
+                form.elements.endereco.value = e.endereco || form.elements.endereco.value;
+                form.elements.bairro.value = e.bairro || "";
+                form.elements.cidade.value = e.cidade || "";
+                form.elements.uf.value = e.uf || "";
+                toast("Endereço preenchido pelo CEP.", "sucesso");
+                form.elements.numero.focus();
+            } catch (erro) {
+                toast(erro.message, "aviso");
+            } finally {
+                botao.disabled = false;
+                botao.textContent = "Buscar CEP";
+            }
+        }
+
+        document.getElementById("btnCep").addEventListener("click", buscarCep);
+        form.elements.cep.addEventListener("input", () => {
+            if (form.elements.cep.value.length === 9 && form.elements.cep.value !== ultimoCepConsultado) buscarCep();
+        });
+
+        /* ---------- CADASTRAR (POST) e EDITAR (PUT) ---------- */
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            limparErrosCampos(form);
+
+            const dados = {};
+            for (const campo of ["nome", "cep", "endereco", "numero", "bairro", "cidade", "uf", "telefone", "observacao"]) {
+                dados[campo] = form.elements[campo].value.trim();
+            }
+            dados.uf = dados.uf.toUpperCase();
+
+            botaoSalvar.disabled = true;
+            botaoSalvar.textContent = "Salvando...";
+            try {
+                if (editandoId) {
+                    await api("/api/clientes/" + editandoId, { method: "PUT", body: dados });
+                    toast("Cliente atualizado com sucesso!", "sucesso");
+                } else {
+                    await api("/api/clientes", { method: "POST", body: dados });
+                    toast("Cliente cadastrado com sucesso!", "sucesso");
+                }
+                janela.close();
+                carregar();
+            } catch (erro) {
+                mostrarErrosCampos(form, erro.campos);
+                toast(erro.message, "erro");
+            } finally {
+                botaoSalvar.disabled = false;
+                botaoSalvar.textContent = "Salvar";
+            }
+        });
+
+        /* ---------- EDITAR / EXCLUIR (DELETE) pelos botões da tabela ---------- */
+        corpo.addEventListener("click", async (e) => {
+            const botao = e.target.closest("button[data-acao]");
+            if (!botao) return;
+            const cliente = clientes.find((c) => String(c.id) === botao.dataset.id);
+            if (!cliente) return;
+
+            if (botao.dataset.acao === "editar") {
+                abrirJanela(cliente);
+            } else {
+                const ok = await confirmar('Deseja realmente excluir o cliente "' + cliente.nome + '"? Esta ação não pode ser desfeita.',
+                    { titulo: "Excluir cliente" });
+                if (!ok) return;
+                try {
+                    await api("/api/clientes/" + cliente.id, { method: "DELETE" });
+                    toast("Cliente excluído com sucesso.", "sucesso");
+                    carregar();
+                } catch (erro) {
+                    toast(erro.message, "erro");
+                    carregar();
+                }
+            }
+        });
+
+        (async () => {
+            if (await iniciarPagina("clientes")) carregar();
+        })();
+    </script>
+</body>
+</html>
